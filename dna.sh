@@ -16,7 +16,7 @@ detect_folder_stack() {
     elif [ -f "$dir/package.json" ];           then echo "Node.js"
     elif [ -f "$dir/requirements.txt" ] || [ -f "$dir/pyproject.toml" ] || [ -f "$dir/setup.py" ]; then echo "Python"
     elif [ -f "$dir/Cargo.toml" ];             then echo "Rust"
-    elif find "$dir" -maxdepth 1 -name "*.go" | grep -q .; then echo "Go"
+    elif find "$dir" -maxdepth 1 -name "*.go" -print -quit | grep -q .; then echo "Go"
     elif [ -f "$dir/Justfile" ] || [ -f "$dir/Makefile" ]; then echo "Task-Heavy"
     else echo "Unknown"; fi
 }
@@ -27,7 +27,15 @@ detect_test_commands() {
     if [ -f "$dir/Makefile" ] && grep -q "^test:" "$dir/Makefile" 2>/dev/null; then
         echo "- make test"; found=1
     fi
-    if [ -f "$dir/package.json" ] && python3 -c "import json,sys; d=json.load(open('$dir/package.json')); sys.exit(0 if d.get('scripts',{}).get('test') else 1)" 2>/dev/null; then
+    if [ -f "$dir/package.json" ] && python3 - "$dir/package.json" 2>/dev/null <<'PYEOF'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+    sys.exit(0 if d.get('scripts', {}).get('test') else 1)
+except Exception:
+    sys.exit(1)
+PYEOF
+    then
         echo "- npm test"; found=1
     fi
     if [ -f "$dir/pytest.ini" ]; then
@@ -38,7 +46,7 @@ detect_test_commands() {
     if [ -f "$dir/Cargo.toml" ]; then
         echo "- cargo test"; found=1
     fi
-    if find "$dir" -maxdepth 1 -name "*.go" | grep -q .; then
+    if find "$dir" -maxdepth 1 -name "*.go" -print -quit | grep -q .; then
         echo "- go test ./..."; found=1
     fi
     if [ -f "$dir/Gemfile" ]; then
@@ -48,7 +56,7 @@ detect_test_commands() {
             echo "- bundle exec rake test"; found=1
         fi
     fi
-    [ $found -eq 0 ] && echo "- (no test commands detected)"
+    [[ $found -eq 0 ]] && echo "- (no test commands detected)"
 }
 
 detect_entry_points() {
@@ -64,12 +72,13 @@ detect_entry_points() {
             fi
         done
     done
-    [ $found -eq 0 ] && echo "- (no standard entry points detected)"
+    [[ $found -eq 0 ]] && echo "- (no standard entry points detected)"
 }
 
 CLAUDE_MD_FILE="$ABS_TARGET_DIR/CLAUDE.md"
 
 generate_claude_md() {
+    [[ -f "$CLAUDE_MD_FILE" ]] && return 0
     {
         echo "# Project: $PROJECT_NAME"
         echo ""
