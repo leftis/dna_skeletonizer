@@ -10,6 +10,13 @@ The Universal DNA Skeletonizer is a high-performance utility designed to extract
 * **Token-Dense Sigil Format**: Utilizes the TOON 2.0 specification to maximize context window availability by removing redundant prose, spaces, and indentation.
 * **Multi-Manifest Parsing**: Extracts dependency metadata from Gemfile, package.json, requirements.txt, scrapy.cfg, and various .toml files.
 
+## Output Files
+
+Running `dna.sh` on a directory produces two files:
+
+- **`project_dna.toon`** — compact navigation index for cost-efficient LLM context
+- **`CLAUDE.md`** — project facts (stack, test commands, entry points) for Claude Code sessions. Edit freely after generation. Re-running `dna.sh` will not overwrite an existing `CLAUDE.md`.
+
 ## High-Density Sigil Specification (TOON 2.0)
 
 The output uses a system of sigils to communicate hierarchy and data types to the LLM:
