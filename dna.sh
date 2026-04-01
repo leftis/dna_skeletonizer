@@ -27,7 +27,7 @@ detect_test_commands() {
     if [ -f "$dir/Makefile" ] && grep -q "^test:" "$dir/Makefile" 2>/dev/null; then
         echo "- make test"; found=1
     fi
-    if [ -f "$dir/package.json" ] && grep -q '"test"' "$dir/package.json" 2>/dev/null; then
+    if [ -f "$dir/package.json" ] && python3 -c "import json,sys; d=json.load(open('$dir/package.json')); sys.exit(0 if d.get('scripts',{}).get('test') else 1)" 2>/dev/null; then
         echo "- npm test"; found=1
     fi
     if [ -f "$dir/pytest.ini" ]; then
